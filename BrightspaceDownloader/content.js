@@ -1,13 +1,94 @@
-console.log("🚀 插件已尝试注入...");
+console.log("🚀 Brightspace downloader loaded");
 
-function init() {
-    // 防止重复注入
+let currentDownloadInfo = null;
+function getCourseInfo() {
+
+    const downloadBtn = document.querySelector('button[id^="d2l_content_"]');
+    let courseId, topicId;
+
+    if (downloadBtn) {
+        const parts = downloadBtn.id.split('_');
+        courseId = parts[2];
+        topicId = parts[3];
+    } else {
+        const match = window.location.href.match(/content\/(\d+)\/viewContent\/(\d+)/);
+        if (match) {
+            courseId = match[1];
+            topicId = match[2];
+        }
+    }
+
+    return { courseId, topicId };
+}
+
+function getCourseName() {
+    return document
+        .querySelector('div.d2l-navigation-s-title-container')
+        ?.innerText.trim() || "Unknown_Course";
+}
+
+function getBreadcrumbs() {
+
+    return Array.from(document.querySelectorAll('d2l-breadcrumb'))
+        .map(host => host.shadowRoot?.querySelector('a')?.innerText.trim() || "")
+        .filter(t => t !== "")
+        .slice(1);
+
+}
+
+
+function getFileTitle() {
+    return document.querySelector('h1.d2l-page-title')
+        ?.innerText.trim() || "Document";
+}
+
+function buildDownloadUrl(courseId, topicId) {
+
+    return `https://brightspace.algonquincollege.com/d2l/le/content/${courseId}/topics/files/download/${topicId}/DirectFileTopicDownload`;
+
+}
+function buildFileName() {
+
+    const course = getCourseName();
+    const breadcrumbs = getBreadcrumbs();
+    const fileTitle = getFileTitle();
+
+    const folderPath = breadcrumbs.join("_");
+
+    const rawName = `${course} - ${folderPath} - ${fileTitle}`;
+
+    return rawName.replace(/[\\/:*?"<>|]/g, "_");
+
+}
+async function getExtension(downloadUrl) {
+
+    const res = await fetch(downloadUrl, {
+        method: "HEAD",
+        credentials: "include"
+    });
+
+    const cd = res.headers.get("content-disposition");
+
+    if (cd) {
+        const match = cd.match(/filename="(.+)"/);
+        if (match) {
+            const filename = match[1];
+            return "." + filename.split(".").pop();
+            //return match;
+        }
+    }
+
+    return "";
+}
+function createButton() {
+
     if (document.getElementById("my-custom-btn")) return;
 
     const btn = document.createElement("button");
+
     btn.id = "my-custom-btn";
-    btn.innerText = "🔍 抓取结构";
-    // 稍微改下样式，确保它在最顶层且显眼
+    btn.innerText = "一键分类下载";
+
     Object.assign(btn.style, {
         position: "fixed",
         top: "20px",
@@ -22,35 +103,48 @@ function init() {
         cursor: "pointer",
         boxShadow: "0 4px 15px rgba(0,0,0,0.3)"
     });
-    function getFinalFileName() {
-        // 1. 抓取课程名
-        //const course = document.querySelector('.d2l-navigation-s-header-text')?.innerText.trim() || "Unknown_Course";
-        const course = document.querySelector('div.d2l-navigation-s-title-container').innerText;
-        // 2. 抓取面包屑路径 (处理 Shadow DOM)
-        const breadcrumbs = Array.from(document.querySelectorAll('d2l-breadcrumb')).map(host => {
-            return host.shadowRoot?.querySelector('a')?.innerText.trim() || "";
-        }).filter(t => t !== "")
-            .slice(1);
-        const folderPath = breadcrumbs.join("_"); // 用下划线连接路径
 
-        // 3. 抓取当前页面标题
-        const fileTitle = document.querySelector('h1.d2l-page-title')?.innerText.trim() || "Document";
-
-        // 拼接成最终文件名 (去掉非法字符)
-        const rawName = `${course} - ${folderPath} - ${fileTitle}`;
-        return rawName.replace(/[\\/:*?"<>|]/g, "_"); // 替换掉 Windows 不允许作为文件名的字符
-    }
-
-    // 按钮点击时
     btn.onclick = () => {
-        const finalName = getFinalFileName();
-        console.log("📂 预想的文件路径/名称为:", finalName);
-        alert("建议文件名已生成，请在 Console 查看");
+
+        const { courseId, topicId } = getCourseInfo();
+
+        const downloadUrl = buildDownloadUrl(courseId, topicId);
+        const finalName = buildFileName();
+        if (!downloadUrl) {
+            alert("未能识别下载地址，请确保在课件预览页！");
+            return;
+        }
+
+        const course = getCourseName();
+        const breadcrumbs = getBreadcrumbs();
+        const fileTitle = getFileTitle();
+        //const ext =getExtension(downloadUrl);
+
+        const fullPath = `${course}/${breadcrumbs.join('/')}/${fileTitle}`
+
+        console.log("准备下载:", downloadUrl);
+        console.log("目标路径:", fullPath);
+
+        chrome.runtime.sendMessage({
+            action: "startDownload",
+            url: downloadUrl,
+            path: fullPath
+        });
+
     };
 
     document.body.appendChild(btn);
-    console.log("✅ 按钮注入成功！");
+
+
+
+
 }
 
-// 考虑到 Brightspace 的动态加载，每隔 2 秒检查一次按钮是否存在
-setInterval(init, 2000);
+function init() {
+
+    console.log("插件初始化");
+
+    createButton();
+
+}
+setInterval(init, 5000);
