@@ -50,14 +50,20 @@ function buildDownloadUrl(courseId, topicId) {
 function buildFileName() {
 
     const course = getCourseName();
+    const match = course.match(/^(\d{2}\w)_([A-Z]{3}\d{4})_(.+)/);
+
+    const term = `${match[1]}`;
+    const code = `${match[2]}`;
+    const courseName = `${match[3]}`;
+
     const breadcrumbs = getBreadcrumbs();
     const fileTitle = getFileTitle();
 
-    const folderPath = breadcrumbs.join("_");
+    const filePath = breadcrumbs.join("_");
 
-    const rawName = `${course} - ${folderPath} - ${fileTitle}`;
+    const rawName = `${term}/${courseName}/${filePath} - ${fileTitle}`;
 
-    return rawName.replace(/[\\/:*?"<>|]/g, "_");
+    return rawName;
 
 }
 async function getExtension(downloadUrl) {
@@ -87,7 +93,7 @@ function createButton() {
     const btn = document.createElement("button");
 
     btn.id = "my-custom-btn";
-    btn.innerText = "一键分类下载";
+    btn.innerText = "download";
 
     Object.assign(btn.style, {
         position: "fixed",
@@ -109,9 +115,9 @@ function createButton() {
         const { courseId, topicId } = getCourseInfo();
 
         const downloadUrl = buildDownloadUrl(courseId, topicId);
-        const finalName = buildFileName();
+        const rawName = buildFileName();
         if (!downloadUrl) {
-            alert("未能识别下载地址，请确保在课件预览页！");
+            alert("unrecognized download URL!");
             return;
         }
 
@@ -120,15 +126,13 @@ function createButton() {
         const fileTitle = getFileTitle();
         //const ext =getExtension(downloadUrl);
 
-        const fullPath = `${course}/${breadcrumbs.join('/')}/${fileTitle}`
-
-        console.log("准备下载:", downloadUrl);
-        console.log("目标路径:", fullPath);
+        console.log("prepare download:", downloadUrl);
+        console.log("target path:", rawName);
 
         chrome.runtime.sendMessage({
             action: "startDownload",
             url: downloadUrl,
-            path: fullPath
+            path: rawName
         });
 
     };
@@ -142,7 +146,7 @@ function createButton() {
 
 function init() {
 
-    console.log("插件初始化");
+    console.log("plugin initialized");
 
     createButton();
 

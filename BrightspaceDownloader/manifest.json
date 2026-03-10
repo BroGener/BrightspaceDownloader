@@ -5,7 +5,8 @@
   "permissions": [
     "downloads",
     "scripting",
-    "activeTab"
+    "activeTab",
+    "storage"
   ],
   "background": {
     "service_worker": "background.js"
@@ -17,8 +18,13 @@
       ],
       "js": [
         "content.js"
-      ],
-      "run_at": "document_end"
+      ]
+      
     }
-  ]
+  ],
+    "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  }
 }
+

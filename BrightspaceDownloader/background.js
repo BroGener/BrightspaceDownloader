@@ -2,7 +2,7 @@ console.log("Background downloader ready");
 
 let pendingDownload = null;
 
-chrome.runtime.onMessage.addListener((msg) => {
+chrome.runtime.onMessage.addListener((msg,sender, sendResponse) => {
 
     if (msg.action !== "startDownload") return;
 

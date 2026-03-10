@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Downloader Settings</title>
+<style>
+body{
+  font-family:Arial;
+  max-width:700px;
+  margin:auto;
+  padding:20px;
+}
+label{
+  display:block;
+  margin-top:15px;
+}
+input{
+  width:100%;
+  padding:6px;
+}
+button{
+  margin-top:20px;
+  padding:8px 16px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Download Settings</h2>
+
+<label>
+Path Template
+<input id="pathTemplate">
+</label>
+
+<p>Variables:</p>
+<ul>
+<li>{course}</li>
+<li>{crumbs}</li>
+<li>{title}</li>
+</ul>
+
+<label>
+Course Split Character
+<input id="courseSplit">
+</label>
+
+<label>
+Course Part Index
+<input id="courseIndex" type="number">
+</label>
+
+<button id="save">Save</button>
+
+<p id="status"></p>
+
+<script src="options.js"></script>
+
+</body>
+</html>
