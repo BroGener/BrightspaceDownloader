@@ -25,7 +25,7 @@ chrome.downloads.onDeterminingFilename.addListener(
         if (!item.url.includes("DirectFileTopicDownload")) return;
 
         const ext =
-            "." + item.filename.substring(item.filename.lastIndexOf("."));
+            item.filename.substring(item.filename.lastIndexOf("."));
 
         const finalPath = pendingDownload.path + ext;
 

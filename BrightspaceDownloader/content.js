@@ -151,4 +151,5 @@ function init() {
     createButton();
 
 }
+init();
 setInterval(init, 5000);
